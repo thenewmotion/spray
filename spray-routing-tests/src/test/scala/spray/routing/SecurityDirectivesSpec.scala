@@ -34,12 +34,12 @@ class SecurityDirectivesSpec extends RoutingSpec {
     "reject requests without Authorization header with an AuthenticationRequiredRejection" in {
       Get() ~> {
         authenticate(BasicAuth(dontAuth, "Realm")) { echoComplete }
-      } ~> check { rejection === AuthenticationRequiredRejection("Basic", "Realm", Map.empty) }
+      } ~> check { rejection === AuthenticationRequiredRejection("Basic", "Realm", Map()) }
     }
     "reject unauthenticated requests with Authorization header with an AuthorizationFailedRejection" in {
       Get() ~> Authorization(BasicHttpCredentials("Bob", "")) ~> {
         authenticate(BasicAuth(dontAuth, "Realm")) { echoComplete }
-      } ~> check { rejection === AuthenticationFailedRejection("Realm") }
+      } ~> check { rejection === AuthenticationFailedRejection("Basic", "Realm", Map()) }
     }
     "extract the object representing the user identity created by successful authentication" in {
       Get() ~> Authorization(BasicHttpCredentials("Alice", "")) ~> {
@@ -56,9 +56,15 @@ class SecurityDirectivesSpec extends RoutingSpec {
     }
   }
 
+  case class TheAnswer(int: Int) extends AuthenticatedIdentityContext {
+    def uniqueId: String = int.toString
+
+    def username: String = int.toString
+  }
+
   "the 'authenticate(<ContextAuthenticator>)' directive" should {
-    val myAuthenticator: ContextAuthenticator[Int] = ctx ⇒ Future {
-      Either.cond(ctx.request.uri.authority.host == Uri.NamedHost("spray.io"), 42,
+    val myAuthenticator: ContextAuthenticator[TheAnswer] = ctx ⇒ Future {
+      Either.cond(ctx.request.uri.authority.host == Uri.NamedHost("spray.io"), TheAnswer(42),
         AuthenticationRequiredRejection("my-scheme", "MyRealm", Map()))
     }
     "reject requests not satisfying the filter condition" in {
@@ -67,7 +73,7 @@ class SecurityDirectivesSpec extends RoutingSpec {
     }
     "pass on the authenticator extraction if the filter conditions is met" in {
       Get() ~> Host("spray.io") ~> authenticate(myAuthenticator) { echoComplete } ~>
-        check { entityAs[String] === "42" }
+        check { entityAs[String] === "TheAnswer(42)" }
     }
   }
 }

@@ -60,6 +60,6 @@ object AuthMagnet {
   implicit def fromFutureAuth[T](auth: Future[Authentication[T]])(implicit executor: ExecutionContext) =
     new AuthMagnet(onSuccess(auth))
 
-  implicit def fromContextAuthenticator[T](auth: ContextAuthenticator[T])(implicit executor: ExecutionContext) =
+  implicit def fromContextAuthenticator[T <: AuthenticatedIdentityContext](auth: ContextAuthenticator[T])(implicit executor: ExecutionContext) =
     new AuthMagnet(extract(auth).flatMap(onSuccess(_)))
 }

@@ -227,7 +227,7 @@ object Build extends Build with DocSupport {
     )
 
   lazy val sprayRoutingExamples = Project("spray-routing-examples", file("examples/spray-routing"))
-    .aggregate(onJetty, onSprayCan, simpleRoutingApp)
+    .aggregate(onJetty, onSprayCan, simpleRoutingApp, openIDConnectRoutingApp)
     .settings(exampleSettings: _*)
 
   lazy val onJetty = Project("on-jetty", file("examples/spray-routing/on-jetty"))
@@ -253,6 +253,11 @@ object Build extends Build with DocSupport {
     .dependsOn(sprayCan, sprayRouting)
     .settings(standaloneServerExampleSettings: _*)
     .settings(libraryDependencies ++= compile(akkaActor))
+
+  lazy val openIDConnectRoutingApp = Project("openid-connect-routing-app", file("examples/spray-routing/openid-connect-routing-app"))
+    .dependsOn(sprayCan, sprayRouting, sprayClient, sprayHttp)
+    .settings(exampleSettings: _*)
+    .settings(libraryDependencies ++= compile(akkaActor, sprayJson))
 
   lazy val sprayServletExamples = Project("spray-servlet-examples", file("examples/spray-servlet"))
     .aggregate(simpleSprayServletServer)

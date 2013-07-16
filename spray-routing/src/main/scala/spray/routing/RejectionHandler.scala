@@ -39,8 +39,9 @@ object RejectionHandler {
       complete(Unauthorized, `WWW-Authenticate`(HttpChallenge(scheme, realm, params)) :: Nil,
         "The resource requires authentication, which was not supplied with the request")
 
-    case AuthenticationFailedRejection(realm) :: _ ⇒
-      complete(Unauthorized, "The supplied authentication is invalid")
+    case AuthenticationFailedRejection(scheme, realm, params) :: _ ⇒
+      complete(Unauthorized, `WWW-Authenticate`(HttpChallenge(scheme, realm, params)) :: Nil,
+        "The supplied authentication is invalid")
 
     case AuthorizationFailedRejection :: _ ⇒
       complete(Forbidden, "The supplied authentication is not authorized to access this resource")

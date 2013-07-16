@@ -19,22 +19,36 @@ package spray.routing
 import scala.concurrent.Future
 
 package object authentication {
-  type ContextAuthenticator[T] = RequestContext ⇒ Future[Authentication[T]]
+
+  type ContextAuthenticator[T <: AuthenticatedIdentityContext] = RequestContext ⇒ Future[Authentication[T]]
   type Authentication[T] = Either[Rejection, T]
   type UserPassAuthenticator[T] = Option[UserPass] ⇒ Future[Option[T]]
+  type OAuthValidator[T <: AuthenticatedIdentityContext] = Option[OAuthAccessToken] ⇒ Future[Option[T]]
+
 }
 
 package authentication {
 
   /**
-   * Simple case class model of a username/password combination.
+   * Minimal found in the identity context of an authenticated user.
+   */
+  trait AuthenticatedIdentityContext {
+    def uniqueId: String
+    def username: String
+  }
+
+  /**
+   * Simple case class model of a username/password combination. (Basic Auth)
+   * This is input for a Authenticator
    */
   case class UserPass(user: String, pass: String)
 
   /**
-   * A very basic user context object.
+   * A very basic user context object. (Basic Auth)
    * In your application you probably want to use some more specific custom class.
    */
-  case class BasicUserContext(username: String)
+  case class BasicUserContext(username: String) extends AuthenticatedIdentityContext {
+    def uniqueId = username
+  }
 
 }

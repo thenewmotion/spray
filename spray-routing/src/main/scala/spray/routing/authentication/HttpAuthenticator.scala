@@ -27,16 +27,16 @@ import HttpHeaders._
  * An HttpAuthenticator is a ContextAuthenticator that uses credentials passed to the server via the
  * HTTP `Authorization` header to authenticate the user and extract a user object.
  */
-trait HttpAuthenticator[U] extends ContextAuthenticator[U] {
+trait HttpAuthenticator[U <: AuthenticatedIdentityContext] extends ContextAuthenticator[U] {
 
   def apply(ctx: RequestContext) = {
-    val authHeader = ctx.request.headers.findByType[`Authorization`]
+    val authHeader = ctx.request.header[`Authorization`]
     val credentials = authHeader.map { case Authorization(creds) ⇒ creds }
     authenticate(credentials, ctx) map {
       case Some(userContext) ⇒ Right(userContext)
       case None ⇒ Left {
         if (authHeader.isEmpty) AuthenticationRequiredRejection(scheme, realm, params(ctx))
-        else AuthenticationFailedRejection(realm)
+        else AuthenticationFailedRejection(scheme, realm, params(ctx))
       }
     }
   }
@@ -52,7 +52,7 @@ trait HttpAuthenticator[U] extends ContextAuthenticator[U] {
 /**
  * The BasicHttpAuthenticator implements HTTP Basic Auth.
  */
-class BasicHttpAuthenticator[U](val realm: String, val userPassAuthenticator: UserPassAuthenticator[U])(implicit val executionContext: ExecutionContext)
+class BasicHttpAuthenticator[U <: AuthenticatedIdentityContext](val realm: String, val userPassAuthenticator: UserPassAuthenticator[U])(implicit val executionContext: ExecutionContext)
     extends HttpAuthenticator[U] {
 
   def scheme = "Basic"
@@ -72,16 +72,15 @@ object BasicAuth {
   def apply()(implicit settings: RoutingSettings, ec: ExecutionContext): BasicHttpAuthenticator[BasicUserContext] =
     apply("Secured Resource")
 
-  def apply(realm: String)(implicit settings: RoutingSettings,
-                           ec: ExecutionContext): BasicHttpAuthenticator[BasicUserContext] =
+  def apply(realm: String)(implicit settings: RoutingSettings, ec: ExecutionContext): BasicHttpAuthenticator[BasicUserContext] =
     apply(realm, userPass ⇒ BasicUserContext(userPass.user))
 
-  def apply[T](realm: String, createUser: UserPass ⇒ T)(implicit settings: RoutingSettings, ec: ExecutionContext): BasicHttpAuthenticator[T] =
+  def apply[T <: AuthenticatedIdentityContext](realm: String, createUser: UserPass ⇒ T)(implicit settings: RoutingSettings, ec: ExecutionContext): BasicHttpAuthenticator[T] =
     apply(realm, settings.users, createUser)
 
-  def apply[T](realm: String, config: Config, createUser: UserPass ⇒ T)(implicit ec: ExecutionContext): BasicHttpAuthenticator[T] =
+  def apply[T <: AuthenticatedIdentityContext](realm: String, config: Config, createUser: UserPass ⇒ T)(implicit ec: ExecutionContext): BasicHttpAuthenticator[T] =
     apply(UserPassAuthenticator.fromConfig(config)(createUser), realm)
 
-  def apply[T](authenticator: UserPassAuthenticator[T], realm: String)(implicit ec: ExecutionContext): BasicHttpAuthenticator[T] =
+  def apply[T <: AuthenticatedIdentityContext](authenticator: UserPassAuthenticator[T], realm: String)(implicit ec: ExecutionContext): BasicHttpAuthenticator[T] =
     new BasicHttpAuthenticator[T](realm, authenticator)
 }
