@@ -1,20 +1,14 @@
 package spray.examples
 
 import spray.client.pipelining._
+import spray.json._
 import spray.http._
+import spray.httpx.SprayJsonSupport
+import spray.routing.authentication._
 import spray.util._
 import javax.net.ssl.SSLContext
-import akka.actor.ActorSystem
-import spray.routing.authentication._
 import scala.concurrent.ExecutionContext
-import spray.json._
-import spray.httpx.SprayJsonSupport
-import spray.routing.authentication.OAuthAccessToken
-import spray.http.OAuth2BearerToken
-import scala.Some
-import spray.routing.authentication.OAuthIdentity
-import spray.routing.authentication.OAuthAuthorizationCode
-
+import akka.actor.ActorSystem
 
 /**
  * Simple implementation of the Google OAuth authentication mechanisms.

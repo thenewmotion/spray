@@ -1,25 +1,18 @@
 package spray.examples
 
 import spray.client.pipelining._
+import spray.json._
 import spray.http._
+import spray.http.Uri.Query
+import spray.httpx.SprayJsonSupport
+import spray.routing.authentication._
 import spray.util._
 import javax.net.ssl.SSLContext
-import akka.actor.ActorSystem
-import spray.routing.authentication._
 import scala.concurrent.ExecutionContext
-import spray.json._
-import spray.httpx.SprayJsonSupport
-import spray.http.Uri.Query
-import spray.routing.authentication.OAuthAccessToken
-import spray.http.OAuth2BearerToken
-import scala.Some
-import spray.http.HttpResponse
-import spray.routing.authentication.OAuthIdentity
-import spray.routing.authentication.OAuthAuthorizationCode
-
+import akka.actor.ActorSystem
 
 /**
- * Simple implementation of the Google OAuth authentication mechanisms.
+ * Simple implementation of the Facebook OAuth authentication mechanisms.
  * NOTE: THIS IS A SAMPLE ONLY, IT DOES NOT STORE OR CACHE THE TOKENS IN ANY WAY,
  * NEITHER IS THE SECURITY STATE RANDOMIZED OR SECURE.
  * IT DOES NOT RENEW TOKENS NOR VALIDATE THE LIFECYCLE OF TOKENS
@@ -30,14 +23,15 @@ import spray.routing.authentication.OAuthAuthorizationCode
  *
  * e.g. Use this for your own good, implement proper security and storage of tokens.
  *
- * @param oauthCallbackUrl Callback URI that is used for google to send authorization response
+ * @param oauthCallbackUrl Callback URI that is used for facebook to send authorization response
  * @param system  implicit found actor system
  * @param log implicit found log system
  */
 class FacebookAuthentication(oauthCallbackUrl: Uri)(implicit system: ActorSystem, log: LoggingContext) extends OAuthTransformer {
-  // response by the facebook call to return an identity
-  //{"id":"1055486847","name":"Olger Warnier","first_name":"Olger","last_name":"Warnier","link":"http:\/\/www.facebook.com\/owarnier","username":"owarnier","gender":"male","email":"olger\u0040spectare.nl","timezone":2,"locale":"nl_NL","verified":true,"updated_time":"2013-06-13T18:46:40+0000"}
 
+  /**
+   * response by the facebook call to return an identity
+   */
   case class OAuthIdentityResponse(id: String, name: String, first_name: String, last_name: String, link: String, username: String, gender: String, email: String, timezone: Int, locale: String, verified: Boolean, updated_time: String)
 
   object OAuthClientJsonProtocol extends DefaultJsonProtocol {
@@ -83,7 +77,6 @@ class FacebookAuthentication(oauthCallbackUrl: Uri)(implicit system: ActorSystem
 
     val responseFuture = pipeline { Post(tokenServer, postData) }
     val result = responseFuture.await
-    //HttpResponse(200 OK,HttpEntity(text/plain; charset=UTF-8,access_token=CAAC80FcIc0kBAKNa3gxnpdjZALB9pHBgU3KsMYtoOQmhbLDH3tIbW06WuLnQt7IzJpLlj0aSJw3Nh6aAXGQj9o5ySqhsPxz04MAlZBCpLGVZCNhfYZAVmM6xjJ44FkR3cQt7q3blYcYQbN0hcBH7&expires=5184000),List(Content-Length: 178, Connection: keep-alive, Date: Tue, 16 Jul 2013 18:08:52 GMT, X-FB-Debug: Vc/QMj9oV26mt/z/t0YwfnxjmBdAdfHGgAUKliQ/NXM=, X-FB-Rev: 876422, Pragma: no-cache, Expires: Sat, 01 Jan 2000 00:00:00 GMT, Content-Type: text/plain; charset=UTF-8, Cache-Control: private, no-cache, no-store, must-revalidate, Access-Control-Allow-Origin: *),HTTP/1.1)
     result match {
       case HttpResponse(StatusCodes.OK, entity, _, _) => {
         log.debug("OK result = " + entity.asString)
@@ -98,7 +91,7 @@ class FacebookAuthentication(oauthCallbackUrl: Uri)(implicit system: ActorSystem
 
 
   def userContext(accessToken: OAuthAccessToken): Option[OAuthIdentity] = {
-    //HttpResponse(200 OK,HttpEntity(text/javascript; charset=UTF-8,{"id":"1055486847","name":"Olger Warnier","first_name":"Olger","last_name":"Warnier","link":"http:\/\/www.facebook.com\/owarnier","username":"owarnier","gender":"male","email":"olger\u0040spectare.nl","timezone":2,"locale":"nl_NL","verified":true,"updated_time":"2013-06-13T18:46:40+0000"}),List(Content-Length: 289, Connection: keep-alive, Date: Tue, 16 Jul 2013 18:20:08 GMT, X-FB-Debug: dx9tSglmLZWjUZW2GDb0Xie4PgEj9UlKYzf9rTZSku0=, X-FB-Rev: 876422, Pragma: no-cache, Last-Modified: 2013-06-13T18:46:40+0000, Expires: Sat, 01 Jan 2000 00:00:00 GMT, ETag: "d2dceb50681613af79192b7af99477fef2896240", Content-Type: text/javascript; charset=UTF-8, Cache-Control: private, no-cache, no-store, must-revalidate, Access-Control-Allow-Origin: *),HTTP/1.1)
+
     val pipeline = logRequest(log) ~> sendReceive ~> logResponse(log)
 
     val responseFuture = pipeline {
