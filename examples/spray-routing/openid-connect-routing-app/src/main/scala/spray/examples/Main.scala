@@ -18,8 +18,7 @@ object Main extends App with SimpleRoutingApp {
   // Configuration
 
   // NOTE: You need a host that is accessible for external servers
-//  val appHomeUrl = "http://yourhost.domain.com"
-  val appHomeUrl = "http://owhome.thenewmotion.com"
+  val appHomeUrl = "http://yourhost.domain.com"
   val callbackRoute = "oauthcallback"
   val oauthCallbackUrl = Uri(appHomeUrl + "/" + callbackRoute)
 
